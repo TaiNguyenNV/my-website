@@ -83,20 +83,7 @@ if (isset($_SESSION['user'])) {
             </button>
         </form>
 
-        <!-- 5. Phím tắt điền nhanh tài khoản kiểm thử (Rất tiện khi báo cáo cho thầy cô) -->
-        <div class="demo-accounts">
-            <div class="demo-accounts-title">
-                <span>⚡</span> Bấm chọn nhanh tài khoản thử nghiệm:
-            </div>
-            <div class="demo-account-pills">
-                <div class="demo-pill" onclick="quickFill('admin', '123456')">
-                    <strong>Admin:</strong> admin / 123456
-                </div>
-                <div class="demo-pill" onclick="quickFill('user1', '123456')">
-                    <strong>User:</strong> user1 / 123456
-                </div>
-            </div>
-        </div>
+
 
         <!-- 6. Chuyển hướng sang trang đăng ký -->
         <p class="auth-link" style="text-align: center;">

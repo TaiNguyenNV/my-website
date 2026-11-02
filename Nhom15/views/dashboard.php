@@ -76,25 +76,321 @@ foreach ($topActions as $act) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Thống kê</title>
+    <title>Dashboard Thống kê - Nhom15 Analytics</title>
     <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="../css/admin.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap&subset=vietnamese"
+        rel="stylesheet">
     <!-- Chart.js CDN -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        /* ── KPI Cards ── */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .kpi-card {
+            background: #ffffff;
+            border: 1px solid var(--border-color, #e5e7eb);
+            border-radius: 12px;
+            padding: 20px 18px 16px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+            transition: transform 0.2s, box-shadow 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .kpi-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--kpi-color, #2563eb);
+        }
+
+        .kpi-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.09);
+        }
+
+        .kpi-card .kpi-label {
+            font-size: 0.78rem;
+            color: #6b7280;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .kpi-card .kpi-number {
+            font-size: 2rem;
+            font-weight: 800;
+            margin-top: 10px;
+            color: var(--kpi-color, #1f2937);
+            line-height: 1;
+        }
+
+        /* ── Badge ── */
+        .badge-event {
+            padding: 3px 9px;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            display: inline-block;
+        }
+
+        .badge-search {
+            background: #e0f2fe;
+            color: #0369a1;
+        }
+
+        .badge-start {
+            background: #fef3c7;
+            color: #b45309;
+        }
+
+        .badge-download {
+            background: #f3e8ff;
+            color: #7e22ce;
+        }
+
+        .badge-submit {
+            background: #dcfce7;
+            color: #15803d;
+        }
+
+        .badge-click {
+            background: #f1f5f9;
+            color: #475569;
+        }
+
+        /* ── Quick date presets ── */
+        .date-presets {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .date-preset-btn {
+            padding: 5px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 20px;
+            background: white;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            color: #374151;
+            transition: all 0.15s;
+        }
+
+        .date-preset-btn:hover {
+            background: #2563eb;
+            color: white;
+            border-color: #2563eb;
+        }
+
+        /* ── Chart card ── */
+        .chart-card {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 24px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+        }
+
+        .chart-card .chart-title {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 16px;
+        }
+
+        /* ── Funnel ── */
+        .funnel-wrapper {
+            display: flex;
+            align-items: stretch;
+            padding: 20px;
+            gap: 0;
+        }
+
+        .funnel-step {
+            flex: 1;
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px 15px;
+            text-align: center;
+        }
+
+        .funnel-step h4 {
+            font-size: 0.82rem;
+            color: #6b7280;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            margin: 0 0 10px;
+        }
+
+        .funnel-step .funnel-num {
+            font-size: 2.2rem;
+            font-weight: 800;
+            line-height: 1;
+        }
+
+        .funnel-step .funnel-bar-wrap {
+            margin-top: 12px;
+            background: #e5e7eb;
+            border-radius: 4px;
+            height: 6px;
+            overflow: hidden;
+        }
+
+        .funnel-step .funnel-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+        }
+
+        .funnel-arrow {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 0 12px;
+            flex-shrink: 0;
+        }
+
+        .funnel-arrow .arrow-pct {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #2563eb;
+            background: #eff6ff;
+            padding: 2px 8px;
+            border-radius: 10px;
+            margin-bottom: 4px;
+            white-space: nowrap;
+        }
+
+        /* ── Progress bar cho Top Actions ── */
+        .action-bar-wrap {
+            background: #f1f5f9;
+            border-radius: 4px;
+            height: 5px;
+            margin-top: 5px;
+            overflow: hidden;
+        }
+
+        .action-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #2563eb, #60a5fa);
+            border-radius: 4px;
+        }
+
+        /* ── Giao diện đồng bộ với Nhom15 Cloud (xanh dương + nền sáng) ── */
+        :root {
+            --blue: #2563eb;
+            --blue-dark: #1d4ed8;
+            --blue-soft: #eff6ff;
+            --navy: #0f172a;
+        }
+
+        body {
+            font-family: Inter, "Segoe UI", system-ui, -apple-system, sans-serif;
+            background: #f8fafc;
+            color: #0f172a;
+        }
+
+        .main-content {
+            background: #f8fafc;
+        }
+
+        .top-navbar {
+            background: #fff;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .sidebar {
+            background: var(--navy);
+        }
+
+        .sidebar-brand {
+            color: #fff;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .sidebar-menu li a {
+            color: #94a3b8;
+        }
+
+        .sidebar-menu li a:hover {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .sidebar-menu li.active {
+            background: rgba(37, 99, 235, 0.22);
+            border-left-color: #3b82f6;
+        }
+
+        .sidebar-menu li.active a {
+            color: #fff;
+            border-left-color: #3b82f6;
+        }
+
+        .btn-primary {
+            background: var(--blue);
+            border-color: var(--blue);
+            color: #fff;
+            border-radius: 8px;
+            font-weight: 600;
+        }
+
+        .btn-primary:hover {
+            background: var(--blue-dark);
+            border-color: var(--blue-dark);
+        }
+
+        .form-control {
+            border-radius: 8px;
+        }
+
+        /* Sửa bố cục bộ lọc: ô chọn không bị kéo giãn hết chiều ngang */
+        #filterForm .form-control {
+            width: auto;
+            min-width: 150px;
+        }
+
+        #filterForm label {
+            white-space: nowrap;
+            margin: 0;
+        }
+
+        #filterForm .btn {
+            border-radius: 8px;
+            font-weight: 600;
+        }
+    </style>
 </head>
 
 <body>
     <!-- Sidebar -->
     <div class="sidebar">
-        <div class="sidebar-brand">Nhom15</div>
+        <div class="sidebar-brand">Nhom15 Analytics</div>
         <ul class="sidebar-menu">
             <li class="active"><a href="dashboard.php">Thống kê & Báo cáo</a></li>
-            <li><a href="funnels.php">Phân tích Chuỗi (Funnel)</a></li>
+            <li><a href="funnels.php">Phân tích Chuỗi</a></li>
             <?php if (($_SESSION['role'] ?? '') === 'admin'): ?>
                 <li><a href="websites.php">Quản lý Website</a></li>
             <?php endif; ?>
-            <li><a href="<?= $testBase ?>/site1/index.php" target="_blank">🛍️ Store</a></li>
-            <li><a href="<?= $testBase ?>/site2/index.php" target="_blank">☁️ Cloud Services</a></li>
+            <li><a href="test_sites/site1/index.php" target="_blank">🛍️ Store</a></li>
+            <li><a href="test_sites/site2/index.php" target="_blank">☁️ Cloud Services</a></li>
             <li>
                 <a href="../handle/logout.php" style="color: #fca5a5;">
                     Đăng xuất (<?= htmlspecialchars($username) ?>)
@@ -152,7 +448,7 @@ foreach ($topActions as $act) {
 
             <!-- 1. KPI Cards với count-up animation -->
             <div class="kpi-grid">
-                <div class="kpi-card" style="--kpi-color:#4f46e5;">
+                <div class="kpi-card" style="--kpi-color:#2563eb;">
                     <div class="kpi-label">👁️ Lượt xem trang</div>
                     <div class="kpi-number count-up" data-target="<?= (int) $overall['total_pageviews'] ?>">0</div>
                 </div>
@@ -195,7 +491,7 @@ foreach ($topActions as $act) {
                 <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
                     <span>🔀 Phân tích chuỗi thao tác (Funnel: Xem trang ➔ Bắt đầu đăng ký ➔ Hoàn tất)</span>
                     <span
-                        style="font-size: 0.88rem; font-weight: 600; color: #4f46e5; background: #eef2ff; padding: 4px 12px; border-radius: 20px;">
+                        style="font-size: 0.88rem; font-weight: 600; color: #2563eb; background: #eff6ff; padding: 4px 12px; border-radius: 20px;">
                         Tỷ lệ chuyển đổi tổng: <b><?= $conversion_rate ?>%</b>
                     </span>
                 </div>
@@ -203,9 +499,9 @@ foreach ($topActions as $act) {
                     <!-- Bước 1 -->
                     <div class="funnel-step">
                         <h4>1. Lượt xem (Pageview)</h4>
-                        <div class="funnel-num" style="color:#4f46e5;"><?= number_format($step_view) ?></div>
+                        <div class="funnel-num" style="color:#2563eb;"><?= number_format($step_view) ?></div>
                         <div class="funnel-bar-wrap">
-                            <div class="funnel-bar-fill" style="width:100%; background:#4f46e5;"></div>
+                            <div class="funnel-bar-fill" style="width:100%; background:#2563eb;"></div>
                         </div>
                         <div style="font-size:0.75rem; color:#9ca3af; margin-top:6px;">100%</div>
                     </div>
@@ -275,7 +571,7 @@ foreach ($topActions as $act) {
                                 <?php foreach ($summary as $row): ?>
                                     <tr style="border-bottom: 1px solid #f1f5f9;">
                                         <td style="padding: 12px 14px;"><b><?= htmlspecialchars($row['report_date']) ?></b></td>
-                                        <td style="padding: 12px 14px; color: #4f46e5; font-weight: 600;">
+                                        <td style="padding: 12px 14px; color: #2563eb; font-weight: 600;">
                                             <?= $row['total_pageviews'] ?>
                                         </td>
                                         <td style="padding: 12px 14px;"><?= $row['active_sessions'] ?></td>
@@ -298,7 +594,7 @@ foreach ($topActions as $act) {
                             <tfoot>
                                 <tr style="background: #f1f5f9; font-weight: bold; border-top: 2px solid #cbd5e1;">
                                     <td style="padding: 12px 14px;">TỔNG CỘNG</td>
-                                    <td style="padding: 12px 14px; color: #4f46e5;">
+                                    <td style="padding: 12px 14px; color: #2563eb;">
                                         <?= number_format($overall['total_pageviews']) ?>
                                     </td>
                                     <td style="padding: 12px 14px;"><?= number_format($overall['active_sessions']) ?></td>
@@ -371,7 +667,7 @@ foreach ($topActions as $act) {
                                         </td>
                                         <td style="padding: 12px 14px; text-align: right;">
                                             <span
-                                                style="font-weight: 800; color: #4f46e5;"><?= number_format($act['click_count']) ?></span>
+                                                style="font-weight: 800; color: #2563eb;"><?= number_format($act['click_count']) ?></span>
                                             <div class="action-bar-wrap">
                                                 <div class="action-bar-fill" style="width:<?= $pct ?>%;"></div>
                                             </div>
@@ -439,8 +735,8 @@ foreach ($topActions as $act) {
                         {
                             label: 'Lượt xem trang',
                             data: <?= $chart_views_json ?>,
-                            borderColor: '#4f46e5',
-                            backgroundColor: 'rgba(79,70,229,0.08)',
+                            borderColor: '#2563eb',
+                            backgroundColor: 'rgba(37,99,235,0.08)',
                             fill: true,
                             tension: 0.4,
                             pointRadius: 4,
