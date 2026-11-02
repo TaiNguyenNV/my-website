@@ -107,3 +107,211 @@
 .log-error {
     color: #fca5a5;
 }
+
+/* ── KPI Cards (Thẻ số liệu nổi bật) ── */
+.kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.kpi-card {
+    background: #ffffff;
+    border: 1px solid var(--border-color, #e5e7eb);
+    border-radius: 12px;
+    padding: 20px 18px 16px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+    transition: transform 0.2s, box-shadow 0.2s;
+    position: relative;
+    overflow: hidden;
+}
+
+.kpi-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--kpi-color, #4f46e5);
+}
+
+.kpi-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.09);
+}
+
+.kpi-card .kpi-label {
+    font-size: 0.78rem;
+    color: #6b7280;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.kpi-card .kpi-number {
+    font-size: 2rem;
+    font-weight: 800;
+    margin-top: 10px;
+    color: var(--kpi-color, #1f2937);
+    line-height: 1;
+}
+
+/* ── Badges Thao tác (Nhãn phân loại sự kiện) ── */
+.badge-event {
+    padding: 3px 9px;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    display: inline-block;
+}
+
+.badge-search {
+    background: #e0f2fe;
+    color: #0369a1;
+}
+
+.badge-start {
+    background: #fef3c7;
+    color: #b45309;
+}
+
+.badge-download {
+    background: #f3e8ff;
+    color: #7e22ce;
+}
+
+.badge-submit {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.badge-click {
+    background: #f1f5f9;
+    color: #475569;
+}
+
+/* ── Nút chọn ngày nhanh (Date Presets) ── */
+.date-presets {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.date-preset-btn {
+    padding: 5px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 20px;
+    background: white;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    color: #374151;
+    transition: all 0.15s;
+}
+
+.date-preset-btn:hover {
+    background: #4f46e5;
+    color: white;
+    border-color: #4f46e5;
+}
+
+/* ── Biểu đồ & Funnel Card ── */
+.chart-card {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 24px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.chart-card .chart-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #1f2937;
+    margin-bottom: 16px;
+}
+
+.funnel-wrapper {
+    display: flex;
+    align-items: stretch;
+    padding: 20px;
+    gap: 0;
+}
+
+.funnel-step {
+    flex: 1;
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 20px 15px;
+    text-align: center;
+}
+
+.funnel-step h4 {
+    font-size: 0.82rem;
+    color: #6b7280;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin: 0 0 10px;
+}
+
+.funnel-step .funnel-num {
+    font-size: 2.2rem;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.funnel-step .funnel-bar-wrap {
+    margin-top: 12px;
+    background: #e5e7eb;
+    border-radius: 4px;
+    height: 6px;
+    overflow: hidden;
+}
+
+.funnel-step .funnel-bar-fill {
+    height: 100%;
+    border-radius: 4px;
+}
+
+.funnel-arrow {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 0 12px;
+    flex-shrink: 0;
+}
+
+.funnel-arrow .arrow-pct {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #4f46e5;
+    background: #eef2ff;
+    padding: 2px 8px;
+    border-radius: 10px;
+    margin-bottom: 4px;
+    white-space: nowrap;
+}
+
+/* ── Progress bar cho Top Actions ── */
+.action-bar-wrap {
+    background: #f1f5f9;
+    border-radius: 4px;
+    height: 5px;
+    margin-top: 5px;
+    overflow: hidden;
+}
+
+.action-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #4f46e5, #818cf8);
+    border-radius: 4px;
+}

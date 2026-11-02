@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 // tools/run_tests.php
 require_once '../database/db_connection.php';
 require_once '../functions/event_functions.php';
@@ -13,25 +13,6 @@ header('Content-Type: text/html; charset=utf-8');
     <meta charset="UTF-8">
     <title>Bộ Kiểm thử Tự động - Đề tài 17</title>
     <link rel="stylesheet" href="../css/style.css">
-    <style>
-        .test-box {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            border: 1px solid var(--border-color);
-            margin-bottom: 16px;
-        }
-
-        .pass {
-            color: var(--success-color);
-            font-weight: bold;
-        }
-
-        .fail {
-            color: var(--danger-color);
-            font-weight: bold;
-        }
-    </style>
 </head>
 
 <body style="padding: 40px; background: #f3f4f6;">

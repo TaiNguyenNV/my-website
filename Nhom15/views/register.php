@@ -14,7 +14,7 @@ if (isset($_SESSION['user'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Đăng ký tài khoản - Nhom15 Analytics</title>
+    <title>Đăng ký tài khoản</title>
     <!-- Nhúng file CSS giao diện hiện đại -->
     <link rel="stylesheet" href="../css/login.css">
 </head>
@@ -24,7 +24,7 @@ if (isset($_SESSION['user'])) {
         <!-- Logo & Tiêu đề -->
         <div style="text-align: center;">
             <div class="brand-badge">
-                <span>✨</span> Nhom15 Analytics
+                <span>✨</span> Web Thống Kê
             </div>
             <h2>Tạo Tài Khoản</h2>
             <p class="login-subtitle">Đăng ký tài khoản người dùng để xem báo cáo phân tích</p>

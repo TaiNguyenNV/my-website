@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 // views/test_sites/site2/index.php
 ?>
 <!DOCTYPE html>
@@ -7,195 +7,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nhom15 Cloud Services - Website Thử Nghiệm 2</title>
+    <title>Cloud Services</title>
     <!-- Nhúng file CSS chung của dự án -->
     <link rel="stylesheet" href="../../../css/style1.css">
-    <style>
-        /* CSS đặc thù cho giao diện Landing Page Dịch vụ (Site 2) */
-        * {
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f8fafc;
-            margin: 0;
-            padding: 0;
-            color: #334155;
-        }
-
-        .store-topbar {
-            background: #0f172a;
-            color: #fff;
-            padding: 10px 30px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 0.9rem;
-        }
-
-        .store-topbar a {
-            color: #c084fc;
-            text-decoration: none;
-            font-weight: 600;
-        }
-
-        .store-header {
-            background: #ffffff;
-            padding: 15px 40px;
-            border-bottom: 1px solid #e2e8f0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-        }
-
-        .store-logo {
-            font-size: 1.4rem;
-            font-weight: bold;
-            color: #7e22ce;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .store-nav {
-            display: flex;
-            gap: 25px;
-            font-weight: 500;
-        }
-
-        .store-nav a {
-            color: #64748b;
-            text-decoration: none;
-            transition: color 0.2s;
-        }
-
-        .store-nav a:hover {
-            color: #7e22ce;
-        }
-
-        .store-banner-horizontal {
-            background: linear-gradient(135deg, #7e22ce, #3b82f6);
-            color: white;
-            padding: 40px 20px;
-            text-align: center;
-            margin-bottom: 30px;
-            box-shadow: inset 0 -4px 6px rgba(0, 0, 0, 0.05);
-        }
-
-        .store-banner-horizontal h1 {
-            font-size: 2.2rem;
-            margin: 0 0 10px 0;
-        }
-
-        .store-banner-horizontal p {
-            font-size: 1.05rem;
-            opacity: 0.95;
-            max-width: 700px;
-            margin: 0 auto;
-        }
-
-        .store-container {
-            max-width: 1100px;
-            margin: 0 auto 50px auto;
-            padding: 0 20px;
-        }
-
-        .ecommerce-search-box {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-            margin-bottom: 30px;
-            display: flex;
-            gap: 12px;
-            align-items: center;
-            border: 1px solid #e2e8f0;
-        }
-
-        .ecommerce-search-box input {
-            flex: 1;
-        }
-
-        .section-title {
-            font-size: 1.25rem;
-            font-weight: bold;
-            color: #1e293b;
-            margin-bottom: 15px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .services-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 20px;
-            margin-bottom: 35px;
-        }
-
-        .service-card {
-            background: white;
-            border: 1px solid #e2e8f0;
-            border-radius: 10px;
-            padding: 24px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-
-        .service-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08);
-        }
-
-        .service-price {
-            color: #7e22ce;
-            font-weight: bold;
-            font-size: 1.15rem;
-            margin: 10px 0 15px 0;
-        }
-
-        .store-widgets-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            margin-bottom: 25px;
-        }
-
-        @media (max-width: 768px) {
-            .store-widgets-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        .store-card {
-            background: white;
-            border: 1px solid #e2e8f0;
-            border-radius: 10px;
-            padding: 24px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
-            margin-bottom: 25px;
-        }
-
-        .live-log-box {
-            background: #0f172a;
-            color: #f8fafc;
-            padding: 16px;
-            border-radius: 8px;
-            font-family: monospace;
-            font-size: 0.85rem;
-            max-height: 200px;
-            overflow-y: auto;
-            border-left: 4px solid #c084fc;
-        }
-
-        .live-log-item {
-            margin-bottom: 6px;
-            padding-bottom: 6px;
-            border-bottom: 1px dashed rgba(255, 255, 255, 0.15);
-        }
-    </style>
+    <link rel="stylesheet" href="../../../css/site2.css">
 </head>
 
 <body>
@@ -209,7 +24,7 @@
     <!-- 2. Header dịch vụ nằm ngang trên cùng -->
     <header class="store-header">
         <div class="store-logo">
-            <span>☁️</span> Nhom15 Cloud
+            <span>☁️</span> Cloud
         </div>
         <nav class="store-nav">
             <a href="#">Trang chủ</a>
@@ -236,6 +51,12 @@
                 style="background: #7e22ce; border-color: #7e22ce;">🔍 Tìm kiếm</button>
         </div>
 
+        <!-- Khu vực kết quả tìm kiếm -->
+        <div id="searchResultBox">
+            <div class="search-result-header">🔍 Kết quả tìm kiếm cho: "<span id="searchKeyword"></span>"</div>
+            <div id="searchResultList"></div>
+        </div>
+
         <!-- Danh sách gói dịch vụ nổi bật -->
         <div class="section-title">🚀 Các gói hạ tầng phổ biến</div>
         <div class="services-grid">
@@ -244,7 +65,9 @@
                 <div class="service-price">199,000 đ / tháng</div>
                 <p style="color: #64748b; font-size: 0.9rem; margin-bottom: 15px;">Phù hợp cho website cá nhân, blog và
                     các dự án nhỏ mới khởi chạy.</p>
-                <button class="btn"
+                <button class="btn btn-detail" data-event="view_detail" data-icon="☁️" data-name="Starter Cloud"
+                    data-price="199,000 đ / tháng"
+                    data-desc="Gói phù hợp cho website cá nhân và blog nhỏ. Tài nguyên: 1 vCPU, 1GB RAM, 20GB SSD, băng thông 100 Mbps. Uptime cam kết 99.9%. Hỗ trợ SSL miễn phí."
                     style="width: 100%; background: #f1f5f9; color: #334155; border: 1px solid #cbd5e1;">Đăng ký
                     ngay</button>
             </div>
@@ -253,16 +76,34 @@
                 <div class="service-price">499,000 đ / tháng</div>
                 <p style="color: #64748b; font-size: 0.9rem; margin-bottom: 15px;">Dành cho doanh nghiệp vừa, cửa hàng
                     thương mại điện tử cần hiệu năng cao.</p>
-                <button class="btn" style="width: 100%; background: #7e22ce; color: white;">Chọn gói này</button>
+                <button class="btn btn-detail" data-event="view_detail" data-icon="🖥️" data-name="Business Pro VPS"
+                    data-price="499,000 đ / tháng"
+                    data-desc="Giải pháp VPS cho doanh nghiệp vừa. Tài nguyên: 4 vCPU, 8GB RAM, 100GB NVMe SSD, 2TB băng thông/tháng. Hỗ trợ 24/7, snapshot hàng ngày, khôi phục 1 click."
+                    style="width: 100%; background: #7e22ce; color: white;">Chọn gói này</button>
             </div>
             <div class="service-card">
                 <h3>Enterprise Cloud</h3>
                 <div class="service-price">1,299,000 đ / tháng</div>
                 <p style="color: #64748b; font-size: 0.9rem; margin-bottom: 15px;">Hạ tầng độc lập, tài nguyên mạnh mẽ
                     phục vụ hệ thống quy mô lớn.</p>
-                <button class="btn"
+                <button class="btn btn-detail" data-event="view_detail" data-icon="🏢" data-name="Enterprise Cloud"
+                    data-price="1,299,000 đ / tháng"
+                    data-desc="Hạ tầng riêng biệt cho hệ thống quy mô lớn. Tài nguyên: 16 vCPU, 32GB RAM, 500GB NVMe SSD, băng thông không giới hạn. SLA 99.99%, IP tĩnh, firewall riêng."
                     style="width: 100%; background: #f1f5f9; color: #334155; border: 1px solid #cbd5e1;">Liên hệ tư
                     vấn</button>
+            </div>
+        </div>
+
+        <!-- Modal chi tiết dịch vụ -->
+        <div id="productModal">
+            <div class="modal-box">
+                <button class="modal-close" id="modalClose">✕</button>
+                <div class="modal-icon" id="modalIcon"></div>
+                <div class="modal-name" id="modalName"></div>
+                <div class="modal-price" id="modalPrice"></div>
+                <div class="modal-desc" id="modalDesc"></div>
+                <button class="btn" style="width:100%; background:#7e22ce; color:white; font-weight:600;">⭐ Đăng ký gói
+                    này</button>
             </div>
         </div>
 
@@ -325,6 +166,88 @@
     <!-- Nhúng mã JavaScript Tracker cho Website ID = 2 -->
     <script src="../../../js/tracker.js"></script>
     <script>
+        // ===== DỮ LIỆU DỊCH VỤ GIẢ (dùng cho Search & Detail) =====
+        const SERVICES = [
+            { icon: '☁️', name: 'Starter Cloud', price: '199,000 đ / tháng', desc: 'Gói phù hợp cho website cá nhân và blog nhỏ. Tài nguyên: 1 vCPU, 1GB RAM, 20GB SSD, băng thông 100 Mbps. Uptime cam kết 99.9%. Hỗ trợ SSL miễn phí.' },
+            { icon: '🖥️', name: 'Business Pro VPS', price: '499,000 đ / tháng', desc: 'Giải pháp VPS cho doanh nghiệp vừa. Tài nguyên: 4 vCPU, 8GB RAM, 100GB NVMe SSD, 2TB băng thông/tháng. Hỗ trợ 24/7, snapshot hàng ngày, khôi phục 1 click.' },
+            { icon: '🏢', name: 'Enterprise Cloud', price: '1,299,000 đ / tháng', desc: 'Hạ tầng riêng biệt cho hệ thống quy mô lớn. Tài nguyên: 16 vCPU, 32GB RAM, 500GB NVMe SSD, băng thông không giới hạn. SLA 99.99%, IP tĩnh, firewall riêng.' },
+            { icon: '🔒', name: 'SSL & Security Pro', price: '99,000 đ / tháng', desc: 'Gói bảo mật toàn diện: chứng chỉ SSL Wildcard, WAF chống DDoS, quét malware tự động hàng ngày và báo cáo bảo mật theo thời gian thực.' },
+            { icon: '📧', name: 'Business Email', price: '59,000 đ / tháng', desc: 'Email doanh nghiệp chuyên nghiệp với tên miền riêng. Dung lượng 25GB/tài khoản, chống spam, đồng bộ Outlook/Gmail, hỗ trợ IMAP/POP3/SMTP.' },
+        ];
+
+        // ===== MODAL CHI TIẾT DỊCH VỤ =====
+        function openModal(service) {
+            document.getElementById('modalIcon').textContent = service.icon;
+            document.getElementById('modalName').textContent = service.name;
+            document.getElementById('modalPrice').textContent = service.price;
+            document.getElementById('modalDesc').textContent = service.desc;
+            document.getElementById('productModal').classList.add('open');
+        }
+
+        document.getElementById('modalClose').addEventListener('click', function () {
+            document.getElementById('productModal').classList.remove('open');
+        });
+
+        document.getElementById('productModal').addEventListener('click', function (e) {
+            if (e.target === this) this.classList.remove('open');
+        });
+
+        // Gắn sự kiện cho các nút "Xem chi tiết / Đăng ký / Chọn gói"
+        document.querySelectorAll('.btn-detail').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                openModal({
+                    icon: btn.dataset.icon,
+                    name: btn.dataset.name,
+                    price: btn.dataset.price,
+                    desc: btn.dataset.desc,
+                });
+            });
+        });
+
+        // ===== TÌM KIẾM =====
+        function doSearch(keyword) {
+            const kw = keyword.trim().toLowerCase();
+            const resultBox = document.getElementById('searchResultBox');
+            const resultList = document.getElementById('searchResultList');
+            document.getElementById('searchKeyword').textContent = keyword.trim() || '(trống)';
+            resultList.innerHTML = '';
+
+            const matches = kw
+                ? SERVICES.filter(s => s.name.toLowerCase().includes(kw))
+                : SERVICES;
+
+            if (matches.length === 0) {
+                resultList.innerHTML = '<p style="color:#64748b;font-size:0.9rem;margin:8px 0 0 4px;">😕 Không tìm thấy dịch vụ phù hợp.</p>';
+            } else {
+                matches.forEach(function (s) {
+                    const div = document.createElement('div');
+                    div.className = 'search-result-item';
+                    div.innerHTML = '<span class="sri-icon">' + s.icon + '</span>'
+                        + '<div class="sri-info">'
+                        + '<div class="sri-name">' + s.name + '</div>'
+                        + '<div class="sri-price">' + s.price + '</div>'
+                        + '</div>';
+                    div.addEventListener('click', function () {
+                        openModal(s);
+                        window.WebTracker.trackEvent('view_detail', { element_text: s.name, element_tag: 'search-result' });
+                    });
+                    resultList.appendChild(div);
+                });
+            }
+
+            resultBox.style.display = 'block';
+            resultBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        document.getElementById('btnSearch').addEventListener('click', function () {
+            doSearch(document.getElementById('txtSearch').value);
+        });
+
+        document.getElementById('txtSearch').addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') doSearch(this.value);
+        });
+
+        // ===== TRACKER INIT =====
         document.addEventListener("DOMContentLoaded", function () {
             window.WebTracker.init({
                 websiteId: 2,

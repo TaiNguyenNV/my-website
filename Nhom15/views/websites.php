@@ -15,19 +15,20 @@ $success = $_GET['success'] ?? '';
 
 <head>
     <meta charset="UTF-8">
-    <title>Quản lý Website - Nhom15 Analytics</title>
+    <title>Quản lý Website</title>
     <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="../css/admin.css">
 </head>
 
 <body>
     <div class="sidebar">
-        <div class="sidebar-brand">Nhom15 Analytics</div>
+        <div class="sidebar-brand">Web Thống Kê</div>
         <ul class="sidebar-menu">
             <li><a href="dashboard.php">Thống kê & Báo cáo</a></li>
             <li><a href="funnels.php">Phân tích Chuỗi (Funnel)</a></li>
             <li class="active"><a href="websites.php">Quản lý Website</a></li>
-            <li><a href="test_sites/site1/index.php" target="_blank">Mở Website thử nghiệm</a></li>
+            <li><a href="test_sites/site1/index.php" target="_blank">🛍️ Store</a></li>
+            <li><a href="test_sites/site2/index.php" target="_blank">☁️ Cloud Services</a></li>
             <li><a href="../handle/logout.php" style="color: #fca5a5;">Đăng xuất</a></li>
         </ul>
     </div>
