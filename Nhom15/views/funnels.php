@@ -4,6 +4,7 @@ session_start();
 require_once '../database/db_connection.php';
 require_once '../functions/auth_functions.php';
 require_once '../functions/funnel_functions.php';
+require_once '../functions/report_functions.php'; // getTopClickedActions()
 
 requireLogin();
 
@@ -28,16 +29,135 @@ if (function_exists('checkWebsitePermission') && !checkWebsitePermission($pdo, $
 
 $funnel = getFunnelAnalysis($pdo, $website_id);
 
+// ── Thao tác được click nhiều nhất: hôm nay / 7 ngày qua / 30 ngày qua ──
+date_default_timezone_set('Asia/Ho_Chi_Minh');
+$today = date('Y-m-d');
+$click_ranges = [
+    'day' => ['label' => 'Hôm nay', 'from' => $today, 'to' => $today],
+    'week' => ['label' => '7 ngày qua', 'from' => date('Y-m-d', strtotime('-6 days')), 'to' => $today],
+    'month' => ['label' => '30 ngày qua', 'from' => date('Y-m-d', strtotime('-29 days')), 'to' => $today],
+];
+$click_data = [];
+$click_error = false;
+$default_tab = 'day';
+foreach ($click_ranges as $key => $r) {
+    try {
+        $rows = getTopClickedActions($pdo, $website_id, $r['from'], $r['to'] . ' 23:59:59', 10);
+    } catch (Throwable $e) {
+        $rows = [];
+        $click_error = true;
+    }
+    $counts = array_map(function ($x) {
+        return (int) $x['click_count'];
+    }, $rows);
+    $click_data[$key] = ['rows' => $rows, 'max' => $counts ? max($counts) : 0];
+}
+foreach (['day', 'week', 'month'] as $k) {
+    if (!empty($click_data[$k]['rows'])) {
+        $default_tab = $k;
+        break;
+    }
+}
+
+// ── Mặt hàng / gói dịch vụ được xem nhiều nhất (theo từng website) ──
+$HOT_RULE = [
+    'view_pattern' => '/^(?:Xem chi tiết|Chọn gói này|Chọn gói|Đăng ký ngay|Bắt đầu đăng ký dịch vụ ngay)(?:\s*:\s*(.+))?$/iu',
+    'url_params' => ['goi', 'package', 'plan', 'pkg', 'slug', 'name', 'product', 'item', 'id'],
+    'per_site' => 5,   // số mặt hàng hiển thị mỗi website
+];
+$hot_data = [];
+$hot_best = [];
+$hot_default = 'day';
+foreach ($click_ranges as $rk => $rg) {
+    $hot_data[$rk] = [];
+    $best = null;
+    foreach ($websites as $w) {
+        if (function_exists('checkWebsitePermission') && !checkWebsitePermission($pdo, (int) $w['id'], $username)) {
+            continue;
+        }
+        try {
+            $rows = getTopClickedActions($pdo, (int) $w['id'], $rg['from'], $rg['to'] . ' 23:59:59', 200);
+        } catch (Throwable $e) {
+            $rows = [];
+        }
+        $agg = [];
+        foreach ($rows as $row) {
+            $nm = trim((string) $row['action_name']);
+            $label = '';
+            if ($nm !== '' && preg_match($HOT_RULE['view_pattern'], $nm, $mm)) {
+                $label = trim($mm[1] ?? '');
+            }
+            if ($label === '') {
+                $label = hot_label_from_url((string) $row['page_url'], $HOT_RULE['url_params']);
+            }
+            if ($label === '') {
+                continue;
+            }
+            $agg[$label] = ($agg[$label] ?? 0) + (int) $row['click_count'];
+        }
+        arsort($agg);
+        $items = array_slice($agg, 0, $HOT_RULE['per_site'], true);
+        $hot_data[$rk][(int) $w['id']] = ['name' => $w['name'], 'items' => $items, 'max' => $items ? max($items) : 0];
+        foreach ($items as $nm => $cnt) {
+            if ($best === null || $cnt > $best['count']) {
+                $best = ['name' => $nm, 'count' => $cnt, 'site' => $w['name']];
+            }
+        }
+    }
+    $hot_best[$rk] = $best;
+}
+foreach (['day', 'week', 'month'] as $k) {
+    if ($hot_best[$k] !== null) {
+        $hot_default = $k;
+        break;
+    }
+}
+
+// ── Chế độ kiểm tra: mở funnels.php?debug=1 để xem tên thao tác thực tế đang lưu trong database ──
+$hot_debug = [];
+if (isset($_GET['debug'])) {
+    foreach ($websites as $w) {
+        $lbl = $w['name'] . ' (ID ' . $w['id'] . ')';
+        try {
+            $hot_debug[$lbl] = getTopClickedActions($pdo, (int) $w['id'], $click_ranges['month']['from'], $click_ranges['month']['to'] . ' 23:59:59', 30);
+        } catch (Throwable $e) {
+            $hot_debug[$lbl] = [];
+        }
+    }
+}
+
+function hot_label_from_url($url, array $params)
+{
+    $q = parse_url($url, PHP_URL_QUERY);
+    if (!$q) {
+        return '';
+    }
+    parse_str($q, $arr);
+    foreach ($params as $k) {
+        if (isset($arr[$k]) && is_string($arr[$k]) && trim($arr[$k]) !== '') {
+            $v = trim($arr[$k]);
+            return ctype_digit($v) ? 'Gói #' . $v : ucwords(str_replace(['-', '_'], ' ', $v));
+        }
+    }
+    return '';
+}
+
+function event_badge_class($type)
+{
+    $map = ['search' => 'badge-search', 'start' => 'badge-start', 'download' => 'badge-download', 'submit' => 'badge-submit'];
+    return $map[$type] ?? 'badge-click';
+}
+
 $sessions = (int) ($funnel['total_sessions'] ?? 0);
 $view = (int) ($funnel['step_view'] ?? 0);
 $start = (int) ($funnel['step_start'] ?? 0);
 $submit = (int) ($funnel['step_submit'] ?? 0);
 
 $pct = function ($a, $b) {
-    return $b > 0 ? round($a / $b * 100, 1) : 0;
+    return $b > 0 ? round(($a / $b) * 100, 1) : 0;
 };
 
-$pct_start = $pct($start, $view);          // Bước 2 so với bước 1
+$pct_start = $pct($start, $view);         // Bước 2 so với bước 1
 $pct_submit = $pct($submit, $start);       // Bước 3 so với bước 2
 $pct_total = $pct($submit, $view);         // Bước 3 so với bước 1
 
@@ -170,7 +290,6 @@ if ($has_data) {
             color: var(--muted);
         }
 
-        /* Thẻ tóm tắt */
         .stats {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -221,7 +340,6 @@ if ($has_data) {
             color: var(--brand);
         }
 
-        /* Phễu */
         .funnel {
             padding: 26px 22px 10px;
         }
@@ -295,7 +413,6 @@ if ($has_data) {
             color: var(--muted);
         }
 
-        /* Khoảng rời đi giữa các bước */
         .f-gap {
             display: grid;
             grid-template-columns: 190px 1fr 120px;
@@ -335,7 +452,6 @@ if ($has_data) {
             color: #166534;
         }
 
-        /* Nhận xét */
         .insight {
             padding: 18px 22px 22px;
         }
@@ -367,7 +483,6 @@ if ($has_data) {
             line-height: 1.5;
         }
 
-        /* Bảng chi tiết */
         .detail-table {
             width: 100%;
             border-collapse: collapse;
@@ -435,13 +550,6 @@ if ($has_data) {
             color: var(--brand);
         }
 
-        @media (prefers-reduced-motion: reduce) {
-            .f-bar {
-                transition: none;
-            }
-        }
-
-        /* ── Giao diện đồng bộ với Nhom15 Cloud (xanh dương + nền sáng) ── */
         :root {
             --blue: #2563eb;
             --blue-dark: #1d4ed8;
@@ -492,21 +600,305 @@ if ($has_data) {
             border-left-color: #3b82f6;
         }
 
-        .btn-primary {
-            background: var(--blue);
-            border-color: var(--blue);
-            color: #fff;
+        .tabs {
+            display: inline-flex;
+            background: #f1f5f9;
+            border-radius: 10px;
+            padding: 4px;
+            gap: 2px;
+        }
+
+        .tab-btn {
+            border: 0;
+            background: transparent;
+            padding: 7px 16px;
             border-radius: 8px;
+            font: inherit;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #475569;
+            cursor: pointer;
+        }
+
+        .tab-btn:hover {
+            color: #0f172a;
+        }
+
+        .tab-btn[aria-selected="true"] {
+            background: #fff;
+            color: var(--brand);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .top-click {
+            margin: 18px 22px 6px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 10px;
+            padding: 14px 16px;
+        }
+
+        .top-click .trophy {
+            font-size: 1.6rem;
+            line-height: 1;
+        }
+
+        .top-click small {
+            display: block;
+            color: #1e40af;
+            font-size: 0.78rem;
             font-weight: 600;
         }
 
-        .btn-primary:hover {
-            background: var(--blue-dark);
-            border-color: var(--blue-dark);
+        .top-click b {
+            color: #0f172a;
+            font-size: 1.02rem;
         }
 
-        .form-control {
+        .top-click .big {
+            margin-left: auto;
+            text-align: right;
+            color: var(--brand);
+            font-weight: 800;
+            font-size: 1.6rem;
+            line-height: 1.1;
+        }
+
+        .top-click .big span {
+            display: block;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #64748b;
+        }
+
+        .click-row {
+            display: grid;
+            grid-template-columns: 34px 1fr 110px;
+            gap: 12px;
+            align-items: center;
+            padding: 13px 22px;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .click-row:last-child {
+            border-bottom: 0;
+        }
+
+        .rank {
+            width: 26px;
+            height: 26px;
             border-radius: 8px;
+            background: #f1f5f9;
+            color: #475569;
+            font-weight: 800;
+            font-size: 0.82rem;
+            display: grid;
+            place-items: center;
+        }
+
+        .click-row:nth-child(-n+3) .rank {
+            background: #dbeafe;
+            color: #1d4ed8;
+        }
+
+        .click-name {
+            font-weight: 700;
+            color: var(--ink);
+            font-size: 0.92rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .click-url {
+            font-size: 0.78rem;
+            color: var(--muted);
+            word-break: break-all;
+            margin-top: 2px;
+        }
+
+        .click-count {
+            text-align: right;
+            font-weight: 800;
+            color: var(--brand);
+            font-size: 1.05rem;
+        }
+
+        .click-bar {
+            grid-column: 2 / 4;
+            height: 5px;
+            background: #f1f5f9;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: -4px;
+        }
+
+        .click-bar i {
+            display: block;
+            height: 100%;
+            background: linear-gradient(90deg, #2563eb, #60a5fa);
+            border-radius: 4px;
+        }
+
+        .badge-event {
+            padding: 2px 9px;
+            border-radius: 999px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            display: inline-block;
+        }
+
+        .badge-search {
+            background: #e0f2fe;
+            color: #0369a1;
+        }
+
+        .badge-start {
+            background: #fef3c7;
+            color: #b45309;
+        }
+
+        .badge-download {
+            background: #f3e8ff;
+            color: #7e22ce;
+        }
+
+        .badge-submit {
+            background: #dcfce7;
+            color: #15803d;
+        }
+
+        .badge-click {
+            background: #f1f5f9;
+            color: #475569;
+        }
+
+        /* ── Mặt hàng hot nhất ── */
+        .hot-best {
+            margin: 18px 22px 6px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            background: #fff7ed;
+            border: 1px solid #fed7aa;
+            border-radius: 10px;
+            padding: 14px 16px;
+        }
+
+        .hot-best .fire {
+            font-size: 1.6rem;
+            line-height: 1;
+        }
+
+        .hot-best small {
+            display: block;
+            color: #9a3412;
+            font-size: 0.78rem;
+            font-weight: 600;
+        }
+
+        .hot-best b {
+            color: #0f172a;
+            font-size: 1.02rem;
+        }
+
+        .hot-best .big {
+            margin-left: auto;
+            text-align: right;
+            color: #ea580c;
+            font-weight: 800;
+            font-size: 1.6rem;
+            line-height: 1.1;
+        }
+
+        .hot-best .big span {
+            display: block;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #64748b;
+        }
+
+        .hot-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 18px;
+            padding: 16px 22px 22px;
+        }
+
+        .hot-col {
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .hot-col-head {
+            padding: 10px 14px;
+            background: #f8fafc;
+            border-bottom: 1px solid var(--line);
+            font-weight: 700;
+            font-size: 0.88rem;
+            color: var(--ink);
+        }
+
+        .hot-item {
+            display: grid;
+            grid-template-columns: 26px 1fr auto;
+            gap: 10px;
+            align-items: center;
+            padding: 11px 14px;
+            border-bottom: 1px solid #f1f5f9;
+            font-size: 0.88rem;
+        }
+
+        .hot-item:last-child {
+            border-bottom: 0;
+        }
+
+        .hot-item .rank {
+            width: 22px;
+            height: 22px;
+            font-size: 0.75rem;
+        }
+
+        .hot-item:first-of-type .rank {
+            background: #ffedd5;
+            color: #c2410c;
+        }
+
+        .hot-item .nm {
+            font-weight: 600;
+            color: var(--ink);
+        }
+
+        .hot-item .ct {
+            font-weight: 800;
+            color: #ea580c;
+        }
+
+        .hot-item .bar {
+            grid-column: 2 / 4;
+            height: 4px;
+            background: #f1f5f9;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: -4px;
+        }
+
+        .hot-item .bar i {
+            display: block;
+            height: 100%;
+            background: linear-gradient(90deg, #f97316, #fdba74);
+            border-radius: 4px;
+        }
+
+        .hot-none {
+            padding: 18px 14px;
+            color: var(--muted);
+            font-size: 0.85rem;
         }
     </style>
 </head>
@@ -647,6 +1039,159 @@ if ($has_data) {
                 <?php endif; ?>
             </section>
 
+            <!-- Thao tác được click nhiều nhất -->
+            <section class="panel">
+                <div class="panel-head">
+                    <h3>Thao tác được click nhiều nhất</h3>
+                    <div class="tabs" role="tablist" aria-label="Khoảng thời gian" data-group="click">
+                        <?php foreach ($click_ranges as $key => $r): ?>
+                            <button type="button" class="tab-btn" role="tab" data-tab="<?= $key ?>"
+                                aria-selected="<?= $key === $default_tab ? 'true' : 'false' ?>"><?= h($r['label']) ?></button>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+
+                <?php if ($click_error): ?>
+                    <div class="empty"><b>Không đọc được dữ liệu click</b>Kiểm tra hàm getTopClickedActions() trong
+                        functions/report_functions.php.</div>
+                <?php endif; ?>
+
+                <?php foreach ($click_ranges as $key => $r):
+                    $d = $click_data[$key];
+                    $rows = $d['rows'];
+                    ?>
+                    <div class="click-pane" data-pane-group="click" data-tab="<?= $key ?>" role="tabpanel"
+                        <?= $key === $default_tab ? '' : 'hidden' ?>>
+                        <?php if (!$rows): ?>
+                            <div class="empty">
+                                <b>Chưa có lượt click nào (<?= h($r['label']) ?>)</b>
+                                Thử chọn khoảng thời gian dài hơn hoặc thao tác trên website thử nghiệm.
+                            </div>
+                        <?php else:
+                            $first = $rows[0]; ?>
+                            <div class="top-click">
+                                <div class="trophy">🏆</div>
+                                <div>
+                                    <small>Cao nhất · <?= h($r['label']) ?></small>
+                                    <b><?= h($first['action_name']) ?></b>
+                                </div>
+                                <div class="big"><?= number_format((int) $first['click_count']) ?><span>lượt click</span></div>
+                            </div>
+
+                            <?php foreach ($rows as $i => $act):
+                                $n = (int) $act['click_count'];
+                                $w = $d['max'] > 0 ? round($n / $d['max'] * 100) : 0;
+                                ?>
+                                <div class="click-row">
+                                    <div class="rank"><?= $i + 1 ?></div>
+                                    <div>
+                                        <div class="click-name">
+                                            <?= h($act['action_name']) ?>
+                                            <span
+                                                class="badge-event <?= event_badge_class($act['event_type']) ?>"><?= h($act['event_type']) ?></span>
+                                        </div>
+                                        <div class="click-url"><?= h($act['page_url']) ?></div>
+                                    </div>
+                                    <div class="click-count"><?= number_format($n) ?></div>
+                                    <div class="click-bar"><i style="width:<?= $w ?>%"></i></div>
+                                </div>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </div>
+                <?php endforeach; ?>
+            </section>
+
+            <!-- Mặt hàng hot nhất -->
+            <section class="panel">
+                <div class="panel-head">
+                    <h3>🔥 Mặt hàng được xem nhiều nhất</h3>
+                    <div class="tabs" role="tablist" aria-label="Khoảng thời gian" data-group="hot">
+                        <?php foreach ($click_ranges as $key => $rg): ?>
+                            <button type="button" class="tab-btn" role="tab" data-tab="<?= $key ?>"
+                                aria-selected="<?= $key === $hot_default ? 'true' : 'false' ?>"><?= h($rg['label']) ?></button>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+
+                <?php foreach ($click_ranges as $key => $rg):
+                    $best = $hot_best[$key]; ?>
+                    <div data-pane-group="hot" data-tab="<?= $key ?>" role="tabpanel" <?= $key === $hot_default ? '' : 'hidden' ?>>
+                        <?php if ($best): ?>
+                            <div class="hot-best">
+                                <div class="fire">🔥</div>
+                                <div>
+                                    <small>Hot nhất · <?= h($rg['label']) ?> · <?= h($best['site']) ?></small>
+                                    <b><?= h($best['name']) ?></b>
+                                </div>
+                                <div class="big"><?= number_format($best['count']) ?><span>lượt xem</span></div>
+                            </div>
+                        <?php endif; ?>
+
+                        <div class="hot-grid">
+                            <?php foreach ($hot_data[$key] as $col): ?>
+                                <div class="hot-col">
+                                    <div class="hot-col-head"><?= h($col['name']) ?></div>
+                                    <?php if (!$col['items']): ?>
+                                        <div class="hot-none">Chưa có lượt xem sản phẩm nào trong khoảng này.</div>
+                                    <?php else:
+                                        $n = 0;
+                                        foreach ($col['items'] as $nm => $cnt):
+                                            $n++;
+                                            $w = $col['max'] > 0 ? round($cnt / $col['max'] * 100) : 0; ?>
+                                            <div class="hot-item">
+                                                <div class="rank"><?= $n ?></div>
+                                                <div class="nm"><?= h($nm) ?></div>
+                                                <div class="ct"><?= number_format($cnt) ?></div>
+                                                <div class="bar"><i style="width:<?= $w ?>%"></i></div>
+                                            </div>
+                                        <?php endforeach; endif; ?>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            </section>
+
+            <?php if (isset($_GET['debug'])): ?>
+                <section class="panel">
+                    <div class="panel-head">
+                        <h3>🛠 Kiểm tra: tên thao tác đang lưu (30 ngày qua)</h3><span>Xóa ?debug=1 khỏi địa chỉ để
+                            tắt</span>
+                    </div>
+                    <div style="padding:16px 22px; overflow-x:auto;">
+                        <?php foreach ($hot_debug as $lbl => $rows): ?>
+                            <h4 style="margin:10px 0 6px;"><?= h($lbl) ?></h4>
+                            <?php if (!$rows): ?>
+                                <p style="color:#6b7280;">Không có dữ liệu click.</p>
+                            <?php else: ?>
+                                <table class="detail-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Tên thao tác (action_name)</th>
+                                            <th>Loại</th>
+                                            <th>Đường dẫn trang (page_url)</th>
+                                            <th class="num-r">Lượt</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?php foreach ($rows as $row): ?>
+                                            <tr>
+                                                <td><?= h($row['action_name']) ?></td>
+                                                <td><?= h($row['event_type']) ?></td>
+                                                <td style="font-size:0.8rem;color:#64748b;word-break:break-all;">
+                                                    <?= h($row['page_url']) ?>
+                                                </td>
+                                                <td class="num-r"><?= (int) $row['click_count'] ?></td>
+                                            </tr>
+                                        <?php endforeach; ?>
+                                    </tbody>
+                                </table>
+                            <?php endif; ?>
+                        <?php endforeach; ?>
+                    </div>
+                </section>
+            <?php endif; ?>
+
             <!-- Bảng chi tiết -->
             <section class="panel">
                 <div class="panel-head">
@@ -665,21 +1210,21 @@ if ($has_data) {
                         </thead>
                         <tbody>
                             <tr>
-                                <td><span class="dot" style="background:var(--c1);"></span>1. Xem trang</td>
+                                <td><span class="dot" style="background:var(--c1);"></span>Xem trang</td>
                                 <td class="num-r"><b><?= number_format($view) ?></b></td>
                                 <td class="num-r">–</td>
                                 <td class="num-r"><?= $view > 0 ? '100%' : '0%' ?></td>
                                 <td class="num-r">–</td>
                             </tr>
                             <tr>
-                                <td><span class="dot" style="background:var(--c2);"></span>2. Bấm đăng ký</td>
+                                <td><span class="dot" style="background:var(--c2);"></span>Bấm đăng ký</td>
                                 <td class="num-r"><b><?= number_format($start) ?></b></td>
                                 <td class="num-r"><?= $pct_start ?>%</td>
                                 <td class="num-r"><?= $pct_start ?>%</td>
                                 <td class="num-r"><?= number_format($drop1) ?></td>
                             </tr>
                             <tr>
-                                <td><span class="dot" style="background:var(--c3);"></span>3. Gửi biểu mẫu</td>
+                                <td><span class="dot" style="background:var(--c3);"></span>Gửi biểu mẫu</td>
                                 <td class="num-r"><b><?= number_format($submit) ?></b></td>
                                 <td class="num-r"><?= $pct_submit ?>%</td>
                                 <td class="num-r"><?= $pct_total ?>%</td>
@@ -696,6 +1241,23 @@ if ($has_data) {
             Nhóm15 &copy; 2026
         </footer>
     </div>
+
+    <script>
+        // Chuyển tab Hôm nay / 7 ngày / 30 ngày cho từng khu vực (không tải lại trang)
+        document.querySelectorAll('.tabs[data-group]').forEach(function (tabs) {
+            var group = tabs.dataset.group;
+            tabs.querySelectorAll('.tab-btn').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    tabs.querySelectorAll('.tab-btn').forEach(function (b) {
+                        b.setAttribute('aria-selected', b === btn ? 'true' : 'false');
+                    });
+                    document.querySelectorAll('[data-pane-group="' + group + '"]').forEach(function (p) {
+                        p.hidden = (p.dataset.tab !== btn.dataset.tab);
+                    });
+                });
+            });
+        });
+    </script>
 </body>
 
 </html>

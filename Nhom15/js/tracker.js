@@ -50,7 +50,9 @@
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify(data)
+                body: JSON.stringify(data),
+                // Giữ yêu cầu chạy tiếp ngay cả khi người dùng bấm link và chuyển sang trang khác
+                keepalive: true
             })
                 .then(response => response.json())
                 .then(result => {
@@ -68,10 +70,18 @@
         bindEvents: function () {
             // 1. Tự động bắt và phân loại thông minh cú nhấp chuột vào nút bấm & liên kết
             document.addEventListener('click', (e) => {
-                const target = e.target.closest('button, .btn, .track-click, a.track-link, input[type="button"], input[type="submit"]');
+                const target = e.target.closest('button, .btn, .track-click, a.track-link, [data-track-label], input[type="button"], input[type="submit"]');
                 if (!target) return;
 
-                const text = (target.innerText || target.value || target.getAttribute('aria-label') || target.id || '').trim().toLowerCase();
+                // Nhãn tùy chỉnh (data-track-label) và tên sản phẩm (data-product) nếu có.
+                // Ví dụ: <div data-product="Giày Nike"> ... <a class="btn">Xem chi tiết</a> </div>
+                // sẽ được ghi nhận là "Xem chi tiết: Giày Nike".
+                const customLabel = (target.getAttribute('data-track-label') || '').trim();
+                const productEl = target.closest('[data-product]');
+                const productName = productEl ? (productEl.getAttribute('data-product') || '').trim() : '';
+
+                const rawText = (target.innerText || target.value || target.getAttribute('aria-label') || target.id || '').trim();
+                const text = (customLabel || rawText).toLowerCase();
                 const customEvent = target.getAttribute('data-event');
                 const elementId = target.id || 'button_' + Math.random().toString(36).substring(7);
 
@@ -90,12 +100,22 @@
                     eventType = 'submit';
                 }
 
-                // Gửi sự kiện với tên nút bấm đã làm sạch
-                this.trackEvent(eventType, {
-                    element_text: (target.innerText || target.value || target.id || 'Nút bấm').trim(),
+                // Tên thao tác: nhãn nút, kèm tên sản phẩm nếu nút nằm trong khối có data-product
+                let elementText = (customLabel || target.innerText || target.value || target.id || 'Nút bấm').trim();
+                if (productName) {
+                    elementText += ': ' + productName;
+                }
+
+                const payload = {
+                    element_text: elementText,
                     element_id: elementId,
                     element_tag: target.tagName.toLowerCase()
-                });
+                };
+                if (productName) {
+                    payload.product_name = productName;
+                }
+
+                this.trackEvent(eventType, payload);
             });
 
             // 2. Bắt sự kiện gửi biểu mẫu (Form submit)

@@ -1,6 +1,8 @@
 ﻿<?php
 require __DIR__ . '/includes/config.php';
-if (SESSION_NAME !== '') { session_name(SESSION_NAME); }
+if (SESSION_NAME !== '') {
+    session_name(SESSION_NAME);
+}
 session_start();   // dùng chung session với trang chính (cùng domain/port)
 require __DIR__ . '/includes/auth.php';
 require __DIR__ . '/includes/tracker-log.php';
@@ -13,13 +15,15 @@ if (DEV_MODE && isset($_GET['dev_role'])) {
     } else {
         unset($_SESSION['site2_dev']);
     }
-    header('Location: index.php'); exit;
+    header('Location: index.php');
+    exit;
 }
 
 // Ghi nhận click từ JavaScript
 if (($_GET['action'] ?? '') === 'track' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     track_event($_POST['type'] ?? 'click', $_POST['detail'] ?? '');
-    http_response_code(204); exit;
+    http_response_code(204);
+    exit;
 }
 
 // Đăng xuất (xóa session dùng chung nên cũng đăng xuất khỏi trang chính)
@@ -27,7 +31,8 @@ if (($_GET['action'] ?? '') === 'logout') {
     track_event('logout');
     $_SESSION = [];
     session_destroy();
-    header('Location: ' . MAIN_URL . MAIN_LOGIN); exit;
+    header('Location: ' . MAIN_URL . MAIN_LOGIN);
+    exit;
 }
 
 // ===== Tải dữ liệu: ?action=download&type=bang-gia|don-hang|nhat-ky|tai-lieu =====
@@ -43,42 +48,96 @@ if (($_GET['action'] ?? '') === 'download') {
         send_csv('bang-gia.csv', ['Gói', 'CPU', 'RAM', 'SSD', 'Băng thông', 'Website', 'Giá/tháng (VND)'], $rows);
         exit;
     }
-    if (in_array($type, ['don-hang', 'nhat-ky', 'tai-lieu'], true) && !current_user()) {
-        header('Location: ' . main_login_url($_SERVER['REQUEST_URI'] ?? '')); exit;
+    if (in_array($type, ['don-hang', 'nhat-ky', 'tai-lieu', 'chi-tiet'], true) && !current_user()) {
+        header('Location: ' . main_login_url($_SERVER['REQUEST_URI'] ?? ''));
+        exit;
     }
     if ($type === 'don-hang' && can('export.orders')) {
         $me = current_user();
         $st = order_statuses();
         $rows = [];
         foreach (orders_all() as $o) {
-            if (!can('order.view_all') && (string)($o['user_id'] ?? '') !== (string)$me['id']) continue;
-            $s = $o['status'] ?? 'pending'; if ($s === 'active') $s = 'paid';
-            $rows[] = [$o['code'] ?? '', $o['time'] ?? '', $o['name'] ?? '', $o['email'] ?? '', $o['phone'] ?? '',
-                       $o['package'] ?? '', (int)($o['cycle'] ?? 1), (int)($o['total'] ?? 0), $o['method'] ?? '', $st[$s] ?? $s];
+            if (!can('order.view_all') && (string) ($o['user_id'] ?? '') !== (string) $me['id'])
+                continue;
+            $s = $o['status'] ?? 'pending';
+            if ($s === 'active')
+                $s = 'paid';
+            $rows[] = [
+                $o['code'] ?? '',
+                $o['time'] ?? '',
+                $o['name'] ?? '',
+                $o['email'] ?? '',
+                $o['phone'] ?? '',
+                $o['package'] ?? '',
+                (int) ($o['cycle'] ?? 1),
+                (int) ($o['total'] ?? 0),
+                $o['method'] ?? '',
+                $st[$s] ?? $s
+            ];
         }
         track_event('download', 'don-hang');
         send_csv('don-hang.csv', ['Mã đơn', 'Thời gian', 'Khách hàng', 'Email', 'SĐT', 'Gói', 'Chu kỳ (tháng)', 'Tổng tiền (VND)', 'Thanh toán', 'Trạng thái'], $rows);
         exit;
+    }
+    if ($type === 'chi-tiet' && can('export.orders')) {
+        $me = current_user();
+        $code = (string) ($_GET['code'] ?? '');
+        $st = order_statuses();
+        foreach (orders_all() as $o) {
+            if (($o['code'] ?? '') !== $code)
+                continue;
+            if (!can('order.view_all') && (string) ($o['user_id'] ?? '') !== (string) $me['id'])
+                break;
+            $s = $o['status'] ?? 'pending';
+            if ($s === 'active')
+                $s = 'paid';
+            track_event('download', 'chi-tiet: ' . $code);
+            send_csv(
+                'don-' . preg_replace('/[^A-Za-z0-9_-]/', '', $code) . '.csv',
+                ['Mã đơn', 'Thời gian', 'Khách hàng', 'Email', 'SĐT', 'Gói', 'Chu kỳ (tháng)', 'Tổng tiền (VND)', 'Thanh toán', 'Trạng thái'],
+                [
+                    [
+                        $o['code'] ?? '',
+                        $o['time'] ?? '',
+                        $o['name'] ?? '',
+                        $o['email'] ?? '',
+                        $o['phone'] ?? '',
+                        $o['package'] ?? '',
+                        (int) ($o['cycle'] ?? 1),
+                        (int) ($o['total'] ?? 0),
+                        $o['method'] ?? '',
+                        $st[$s] ?? $s
+                    ]
+                ]
+            );
+            exit;
+        }
     }
     if ($type === 'nhat-ky' && can('export.log')) {
         $rows = [];
         $f = LOG_DIR . '/site2-tracker.log';
         foreach (is_file($f) ? file($f, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) : [] as $ln) {
             $r = json_decode($ln, true);
-            if (is_array($r)) $rows[] = [$r['time'] ?? '', $r['user'] ?? '', $r['role'] ?? '', $r['type'] ?? '', $r['detail'] ?? '', $r['ip'] ?? ''];
+            if (is_array($r))
+                $rows[] = [$r['time'] ?? '', $r['user'] ?? '', $r['role'] ?? '', $r['type'] ?? '', $r['detail'] ?? '', $r['ip'] ?? ''];
         }
         track_event('download', 'nhat-ky');
         send_csv('nhat-ky.csv', ['Thời gian', 'Người dùng', 'Vai trò', 'Sự kiện', 'Chi tiết', 'IP'], $rows);
         exit;
     }
     if ($type === 'tai-lieu') {
-        $name = basename((string)($_GET['file'] ?? ''));   // basename chặn ../
+        $name = basename((string) ($_GET['file'] ?? ''));   // basename chặn ../
         $ok = false;
-        foreach (doc_list() as $d) { if ($d['name'] === $name) { $ok = true; break; } }
+        foreach (doc_list() as $d) {
+            if ($d['name'] === $name) {
+                $ok = true;
+                break;
+            }
+        }
         if ($ok) {
             $path = DOWNLOAD_DIR . '/' . $name;
             $isTxt = strtolower(pathinfo($name, PATHINFO_EXTENSION)) === 'txt';
-            $view  = $isTxt && !empty($_GET['view']);   // ?view=1: xem ngay trên trình duyệt (chỉ file .txt)
+            $view = $isTxt && !empty($_GET['view']);   // ?view=1: xem ngay trên trình duyệt (chỉ file .txt)
             track_event($view ? 'view' : 'download', 'tai-lieu: ' . $name);
             header($view ? 'Content-Type: text/plain; charset=UTF-8' : 'Content-Type: application/octet-stream');
             header('Content-Disposition: ' . ($view ? 'inline' : 'attachment') . '; filename="' . str_replace('"', '', $name) . '"');
@@ -93,7 +152,9 @@ if (($_GET['action'] ?? '') === 'download') {
 }
 
 $page = $_GET['page'] ?? 'trang-chu';
-if (!isset($PAGES[$page])) { $page = 'trang-chu'; }
+if (!isset($PAGES[$page])) {
+    $page = 'trang-chu';
+}
 
 // Kiểm tra quyền truy cập trang
 $denied = false;
@@ -115,10 +176,13 @@ if (!$denied && $page === 'don-hang' && $_SERVER['REQUEST_METHOD'] === 'POST' &&
         order_set_status($_POST['code'] ?? '', $st);
         track_event('order_status', ($_POST['code'] ?? '') . ' -> ' . $st);
     }
-    header('Location: index.php?page=don-hang'); exit;
+    header('Location: index.php?page=don-hang');
+    exit;
 }
 
-if (!$denied) { track_event('pageview', $page); }
+if (!$denied) {
+    track_event('pageview', $page);
+}
 
 include __DIR__ . '/includes/header.php';
 include __DIR__ . '/pages/' . ($denied ? '403' : $page) . '.php';
