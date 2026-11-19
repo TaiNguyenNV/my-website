@@ -9,6 +9,12 @@
         try {
             var d = new URLSearchParams({ type: type, detail: detail });
             fetch('index.php?action=track', { method: 'POST', body: d, keepalive: true });
+            if (window.WebTracker) {
+                window.WebTracker.trackEvent(type, {
+                    element_text: detail,
+                    action_name: type
+                });
+            }
         } catch (e) { }
     }
 

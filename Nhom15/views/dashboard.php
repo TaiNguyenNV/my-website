@@ -54,10 +54,28 @@ $rate_submit = ($step_start > 0) ? round($step_submit / $step_start * 100, 1) : 
 $chart_labels = [];
 $chart_views = [];
 $chart_actions = [];
+$summary_by_date = [];
 foreach ($summary as $row) {
-    $chart_labels[] = $row['report_date'];
-    $chart_views[] = (int) $row['total_pageviews'];
-    $chart_actions[] = (int) $row['total_actions'];
+    $summary_by_date[$row['report_date']] = $row;
+}
+
+$from_parts = array_map('intval', explode('-', $date_from));
+$to_parts = array_map('intval', explode('-', $date_to));
+if (
+    count($from_parts) === 3 && count($to_parts) === 3 &&
+    checkdate($from_parts[1], $from_parts[2], $from_parts[0]) &&
+    checkdate($to_parts[1], $to_parts[2], $to_parts[0])
+) {
+    $chart_date = new DateTimeImmutable($date_from);
+    $chart_end_date = new DateTimeImmutable($date_to);
+    while ($chart_date <= $chart_end_date) {
+        $date_key = $chart_date->format('Y-m-d');
+        $row = $summary_by_date[$date_key] ?? [];
+        $chart_labels[] = $date_key;
+        $chart_views[] = (int) ($row['total_pageviews'] ?? 0);
+        $chart_actions[] = (int) ($row['total_actions'] ?? 0);
+        $chart_date = $chart_date->modify('+1 day');
+    }
 }
 $chart_labels_json = json_encode($chart_labels);
 $chart_views_json = json_encode($chart_views);
@@ -81,7 +99,6 @@ foreach ($topActions as $act) {
     <link rel="stylesheet" href="../css/admin.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap&subset=vietnamese"
         rel="stylesheet">
-    <!-- Chart.js CDN -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
         /* ── KPI Cards ── */
@@ -199,19 +216,52 @@ foreach ($topActions as $act) {
 
         /* ── Chart card ── */
         .chart-card {
-            background: white;
-            border: 1px solid #e5e7eb;
-            border-radius: 12px;
-            padding: 20px;
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(145deg, #ffffff 0%, #f8fbff 100%);
+            border: 1px solid #dbeafe;
+            border-radius: 16px;
+            padding: 22px 24px 18px;
             margin-bottom: 24px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+            box-shadow: 0 8px 24px rgba(30, 64, 175, 0.07);
+        }
+
+        .chart-card::before {
+            content: '';
+            position: absolute;
+            inset: 0 auto 0 0;
+            width: 4px;
+            background: linear-gradient(180deg, #2563eb, #38bdf8);
         }
 
         .chart-card .chart-title {
-            font-size: 0.95rem;
-            font-weight: 700;
+            font-size: 1.05rem;
+            font-weight: 750;
             color: #1f2937;
-            margin-bottom: 16px;
+            margin: 0 0 5px;
+        }
+
+        .chart-card .chart-subtitle {
+            color: #64748b;
+            font-size: 0.82rem;
+            margin: 0 0 14px;
+        }
+
+        .chart-plot {
+            position: relative;
+            height: clamp(250px, 34vw, 360px);
+            padding: 8px 6px 0;
+        }
+
+        @media (max-width: 640px) {
+            .chart-card {
+                padding: 18px 14px 14px;
+            }
+
+            .chart-plot {
+                height: 260px;
+                padding: 4px 0 0;
+            }
         }
 
         /* ── Funnel ── */
@@ -478,11 +528,21 @@ foreach ($topActions as $act) {
                 </div>
             </div>
 
-            <!-- 2. Biểu đồ đường Chart.js -->
+            <!-- 2. Biểu đồ đường lượt xem và thao tác -->
             <?php if (!empty($summary)): ?>
                 <div class="chart-card">
                     <div class="chart-title">📈 Biểu đồ lượt xem & tổng thao tác theo ngày</div>
-                    <canvas id="lineChart" height="90"></canvas>
+                    <p class="chart-subtitle">Theo dõi và so sánh xu hướng hoạt động trong khoảng thời gian đã chọn.</p>
+                    <div class="chart-plot">
+                        <canvas id="lineChart"></canvas>
+                    </div>
+                </div>
+            <?php else: ?>
+                <div class="chart-card">
+                    <div class="chart-title">📈 Biểu đồ lượt xem & tổng thao tác theo ngày</div>
+                    <p style="margin:0;padding:40px 12px;text-align:center;color:#6b7280;">
+                        Không có dữ liệu trong khoảng thời gian đã chọn.
+                    </p>
                 </div>
             <?php endif; ?>
 
@@ -739,9 +799,14 @@ foreach ($topActions as $act) {
                             backgroundColor: 'rgba(37,99,235,0.08)',
                             fill: true,
                             tension: 0.4,
-                            pointRadius: 4,
+                            pointRadius: 3,
                             pointHoverRadius: 6,
-                            borderWidth: 2.5,
+                            pointHitRadius: 10,
+                            pointBackgroundColor: '#ffffff',
+                            pointBorderWidth: 2,
+                            borderWidth: 3,
+                            borderCapStyle: 'round',
+                            borderJoinStyle: 'round',
                         },
                         {
                             label: 'Tổng thao tác',
@@ -750,29 +815,75 @@ foreach ($topActions as $act) {
                             backgroundColor: 'rgba(234,88,12,0.06)',
                             fill: true,
                             tension: 0.4,
-                            pointRadius: 4,
+                            pointRadius: 3,
                             pointHoverRadius: 6,
-                            borderWidth: 2.5,
+                            pointHitRadius: 10,
+                            pointBackgroundColor: '#ffffff',
+                            pointBorderWidth: 2,
+                            borderWidth: 3,
+                            borderCapStyle: 'round',
+                            borderJoinStyle: 'round',
                         }
                     ]
                 },
                 options: {
                     responsive: true,
+                    maintainAspectRatio: false,
                     interaction: { mode: 'index', intersect: false },
                     plugins: {
-                        legend: { position: 'top', labels: { usePointStyle: true, boxWidth: 8 } },
+                        legend: {
+                            position: 'top',
+                            align: 'start',
+                            labels: {
+                                usePointStyle: true,
+                                pointStyle: 'circle',
+                                boxWidth: 8,
+                                boxHeight: 8,
+                                padding: 22,
+                                color: '#334155',
+                                font: { family: 'Inter, sans-serif', size: 12, weight: '600' }
+                            }
+                        },
                         tooltip: {
+                            backgroundColor: 'rgba(15, 23, 42, 0.94)',
+                            titleColor: '#f8fafc',
+                            bodyColor: '#e2e8f0',
+                            borderColor: 'rgba(148, 163, 184, 0.25)',
+                            borderWidth: 1,
+                            padding: 12,
+                            cornerRadius: 10,
+                            displayColors: true,
                             callbacks: {
                                 label: c => c.dataset.label + ': ' + c.parsed.y.toLocaleString('vi-VN')
                             }
                         }
                     },
                     scales: {
-                        x: { grid: { display: false }, ticks: { font: { size: 11 } } },
+                        x: {
+                            grid: { display: false },
+                            border: { display: false },
+                            ticks: {
+                                autoSkip: true,
+                                maxTicksLimit: 10,
+                                maxRotation: 0,
+                                color: '#64748b',
+                                font: { family: 'Inter, sans-serif', size: 11 },
+                                callback: function (value) {
+                                    const label = this.getLabelForValue(value);
+                                    return label.length >= 10 ? label.slice(5) : label;
+                                }
+                            }
+                        },
                         y: {
                             beginAtZero: true,
-                            grid: { color: 'rgba(0,0,0,0.05)' },
-                            ticks: { font: { size: 11 }, callback: v => v.toLocaleString('vi-VN') }
+                            border: { display: false },
+                            grid: { color: 'rgba(148, 163, 184, 0.18)', drawTicks: false },
+                            ticks: {
+                                color: '#64748b',
+                                padding: 10,
+                                font: { family: 'Inter, sans-serif', size: 11 },
+                                callback: v => v.toLocaleString('vi-VN')
+                            }
                         }
                     }
                 }

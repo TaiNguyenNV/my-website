@@ -25,6 +25,15 @@
 <?php include __DIR__ . '/modals.php'; ?>
 <script>window.PACKAGES = <?= json_encode($PACKAGES, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG) ?>;</script>
 <script src="<?= ASSET_JS ?>"></script>
+<script src="../../../js/tracker.js"></script>
+<script>
+  if (window.WebTracker) {
+    window.WebTracker.init({
+      websiteId: 2,
+      apiEndpoint: '../../../handle/api_track.php'
+    });
+  }
+</script>
 
 <!-- Script xử lý sự kiện nhấn đúp (dblclick) đã tối ưu async/await -->
 <script>
